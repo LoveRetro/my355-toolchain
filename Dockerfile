@@ -51,7 +51,6 @@ COPY support .
 # build newer libzip from source
 RUN ./build-libzip.sh
 
-RUN ./setup-toolchain.sh
 RUN cat setup-env.sh >> .bashrc
 
 #ENV LD_PREFIX=/usr/aarch64-linux-gnu \
