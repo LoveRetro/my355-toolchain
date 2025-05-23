@@ -40,6 +40,14 @@ RUN apt-get -y update && apt-get -y install \
 RUN mkdir -p /root/workspace
 WORKDIR /root
 
+
+COPY support .
+# build newer libzip from source
+RUN ./build-libzip.sh
+
+RUN ./setup-toolchain.sh
+RUN cat setup-env.sh >> .bashrc
+
 VOLUME /root/workspace
 WORKDIR /root/workspace
 
