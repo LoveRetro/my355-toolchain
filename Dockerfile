@@ -30,6 +30,11 @@ RUN apt-get -y update && apt-get -y install \
 	tree \
 	unzip \
 	wget \
+	libsamplerate0-dev \
+    liblzma-dev \ 
+    libzstd-dev \
+    libbz2-dev \
+    zlib1g-dev \
   && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /root/workspace
