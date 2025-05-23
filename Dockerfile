@@ -35,11 +35,17 @@ RUN apt-get -y update && apt-get -y install \
     libzstd-dev \
     libbz2-dev \
     zlib1g-dev \
+	locales \
+    make \
+    rsync \
+    scons \
+    tree \
+    unzip \
+    wget \
   && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /root/workspace
 WORKDIR /root
-
 
 COPY support .
 # build newer libzip from source
@@ -48,11 +54,10 @@ RUN ./build-libzip.sh
 RUN ./setup-toolchain.sh
 RUN cat setup-env.sh >> .bashrc
 
+#ENV LD_PREFIX=/usr/aarch64-linux-gnu \
+#      PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
+
 VOLUME /root/workspace
 WORKDIR /root/workspace
-
-ENV CROSS_COMPILE=/usr/bin/aarch64-linux-gnu-   
-ENV PREFIX=/usr 
-ENV UNION_PLATFORM=my355
 
 CMD ["/bin/bash"]
