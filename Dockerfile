@@ -1,4 +1,4 @@
-FROM debian:buster-slim
+FROM debian:bookworm-slim
 ENV DEBIAN_FRONTEND=noninteractive
 
 ENV TZ=America/New_York
@@ -43,6 +43,12 @@ RUN apt-get -y update && apt-get -y install \
     tree \
     unzip \
     wget \
+	bluetooth \
+	bluez\ 
+	bluez-test-tools \ 
+	bluez-obexd \
+	autoconf \
+    automake \
   && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /root/workspace
@@ -51,6 +57,10 @@ WORKDIR /root
 COPY support .
 # build newer libzip from source
 RUN ./build-libzip.sh
+
+# build autotools (for bluez)
+RUN ./build-autotools.sh > /root/builds/autotools.log
+# RUN ./build-bluez.sh > /root/builds/bluez.log
 
 RUN cat setup-env.sh >> .bashrc
 
