@@ -1,67 +1,114 @@
-FROM debian:bookworm-slim
-ENV DEBIAN_FRONTEND=noninteractive
+FROM ubuntu:24.04
 
-ENV TZ=America/New_York
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+# RUN sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
 
-RUN dpkg --add-architecture arm64
-RUN apt-get -y update && apt-get -y install \
-    build-essential \
-    cmake \
-    g++-aarch64-linux-gnu \
-    gcc-aarch64-linux-gnu \
-    git \
+# Install base build tools and dependencies
+RUN apt-get update && apt-get install -y \
     make \
+#    build-essential \
+    cmake \
+    ninja-build \
+    autotools-dev \
+    autoconf \
+    automake \
+    autopoint \
+    libtool \
+    po4a \
+    m4 \
     pkg-config \
+    unzip \
     wget \
-    && echo "done"
+    git \
+    python3 \
+    ca-certificates \
+    gettext \
+    vim \
+	golang \
+	squashfs-tools \
+#    python3-pip \
+#    bison \
+#    flex \
+#    python3-mako \
+#    libclc-19-dev \
+#    llvm-dev \
+#    libllvmspirvlib-18-dev \
+#    spirv-tools \
+#    libclang-dev \
+#    libclang-cpp-dev \
+#    wayland-protocols \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get -y install \
-    libsdl2-dev:arm64 \
-    libsdl2-image-dev:arm64 \
-    libsdl2-ttf-dev:arm64 \
-    libgles2-mesa-dev:arm64 \
-    libzip-dev:arm64 \
-    libbz2-dev:arm64 \
-    libsqlite3-dev:arm64 \
-    && echo "done"
+#RUN pip3 install --break-system-packages meson
 
+COPY support /root/support
 
 ENV TOOLCHAIN_DIR=/opt/aarch64-nextui-linux-gnu
-RUN mkdir -p ${TOOLCHAIN_DIR}
 
+# Download the appropriate cross toolchain based on host arch
+RUN mkdir -p ${TOOLCHAIN_DIR} && \
+    ARCH=$(uname -m) && \
+    TOOLCHAIN_REPO=https://github.com/LoveRetro/gcc-arm-8.3-aarch64-my355 && \
+    TOOLCHAIN_BUILD=v8.3.0-20260126-120301-66f7801c && \
+    if [ "$ARCH" = "x86_64" ]; then \
+        TOOLCHAIN_ARCHIVE=gcc-8.3.0-aarch64-nextui-linux-gnu-x86_64-host.tar.xz; \
+    elif [ "$ARCH" = "aarch64" ]; then \
+        TOOLCHAIN_ARCHIVE=gcc-8.3.0-aarch64-nextui-linux-gnu-arm64-host.tar.xz; \
+    else \
+        echo "Unsupported architecture: $ARCH" && exit 1; \
+    fi && \
+    TOOLCHAIN_URL=${TOOLCHAIN_REPO}/releases/download/${TOOLCHAIN_BUILD}/${TOOLCHAIN_ARCHIVE}; \
+    wget -q $TOOLCHAIN_URL -O /tmp/toolchain.tar.xz && \
+    tar -xf /tmp/toolchain.tar.xz -C ${TOOLCHAIN_DIR} --strip-components=2 && \
+    rm /tmp/toolchain.tar.xz
+
+ENV CROSS_TRIPLE=aarch64-nextui-linux-gnu
 ENV CROSS_ROOT=${TOOLCHAIN_DIR}
+ENV SYSROOT=${CROSS_ROOT}/${CROSS_TRIPLE}/libc
 
-ENV CC=aarch64-linux-gnu-gcc
-ENV CXX=aarch64-linux-gnu-g++
-ENV PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
+# Download and extract the SDK sysroot
+ENV SDK_TAR=SDK_usr_tg5040_a133p.tgz
+ENV SDK_URL=https://github.com/trimui/toolchain_sdk_smartpro/releases/download/20231018/${SDK_TAR}
 
-ENV CROSS_COMPILE=aarch64-linux-gnu-
-ENV PREFIX=/
+RUN mkdir -p ${SYSROOT} && \
+wget -q ${SDK_URL} -O /tmp/${SDK_TAR} && \
+tar -xzf /tmp/${SDK_TAR} -C ${SYSROOT} && \
+rm /tmp/${SDK_TAR}
 
+ENV AS=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-as \
+    AR=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-ar \
+    CC=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc \
+    CPP=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-cpp \
+    CXX=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-g++ \
+    LD=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-ld
+
+# Linux kernel cross compilation variables
+ENV PATH=${CROSS_ROOT}/bin:${PATH}
+ENV CROSS_COMPILE=${CROSS_TRIPLE}-
+ENV PREFIX=${SYSROOT}/usr
 ENV ARCH=arm64
 
 # CMake toolchain
 COPY toolchain-aarch64.cmake ${CROSS_ROOT}/Toolchain.cmake
 ENV CMAKE_TOOLCHAIN_FILE=${CROSS_ROOT}/Toolchain.cmake
 
-# COPY support .
-# RUN ./build-SDL2.sh
-# RUN ./build-zlib.sh
-# RUN ./build-libzip.sh
-# RUN ./build-bluez.sh not needed
-# RUN ./build-libsamplerate.sh
-# RUN rm -rf /tmp/cache
+ENV PKG_CONFIG_SYSROOT_DIR=${SYSROOT}
+ENV PKG_CONFIG_PATH=${SYSROOT}/usr/lib/pkgconfig:${SYSROOT}/usr/share/pkgconfig
+
+# stuff and extra libs
+COPY support .
+RUN ./build-libzip.sh
+RUN ./build-libsamplerate.sh
+RUN ./build-lz4.sh
+#RUN ./build-sdl.sh
+#RUN ./build-sqlite.sh
 
 ENV UNION_PLATFORM=my355
-
 ENV PREFIX_LOCAL=/opt/nextui
+
 RUN mkdir -p ${PREFIX_LOCAL}/include
 RUN mkdir -p ${PREFIX_LOCAL}/lib
 
-RUN mkdir -p /root/workspace
 VOLUME /root/workspace
-WORKDIR /root/workspace
-
+WORKDIR /workspace
 
 CMD ["/bin/bash"]
