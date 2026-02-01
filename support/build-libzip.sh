@@ -1,8 +1,46 @@
-#! /bin/sh
+#! /bin/bash
 
-mkdir ~/builds && cd ~/builds
-git clone --depth 1 --branch "v1.11.3" https://github.com/nih-at/libzip.git 
-mkdir -p libzip/build && cd libzip/build
-cmake ..
-make
-make install
+set -euo pipefail
+
+# lzma/xz
+git clone https://github.com/tukaani-project/xz.git /tmp/xz && \
+    cd /tmp/xz && \
+    ./autogen.sh && \
+    ./configure \
+       --host=$CROSS_TRIPLE \
+        --disable-static \
+        --enable-shared \
+    make -j$(nproc) && make install && \
+    cd /tmp && rm -rf /tmp/xz
+
+# zstd
+git clone --depth=1 https://github.com/facebook/zstd.git /tmp/zstd && \
+    cd /tmp/zstd/build/cmake && \
+    cmake . \
+        -DCMAKE_BUILD_TYPE=Release && \
+    make -j$(nproc) && make install && \
+    cd /tmp && rm -rf /tmp/zstd
+
+# bz2
+wget -q https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz -O /tmp/bzip2.tar.gz && \
+    cd /tmp && tar -xzf bzip2.tar.gz && cd bzip2-1.0.8 && \
+    make -j$(nproc) && \
+    make install && \
+# for some reason, libbz2 is not world-readable after install
+    chmod a+r /usr/lib/libbz2.so.1.0 && \
+    cd /tmp && rm -rf /tmp/bzip2*
+
+# zlib
+wget -q https://zlib.net/zlib-1.3.1.tar.gz -O /tmp/zlib.tar.gz && \
+    cd /tmp && tar -xzf zlib.tar.gz && cd zlib-1.3.1 && \
+    ./configure --shared && \
+    make -j$(nproc) && make install && \
+    cd /tmp && rm -rf /tmp/zlib*
+
+# libzip
+git clone https://github.com/nih-at/libzip.git /tmp/libzip && \
+    mkdir /tmp/libzip/build && cd /tmp/libzip/build && \
+    cmake .. \
+        -DCMAKE_BUILD_TYPE=Release && \
+    make -j$(nproc) && make install && \
+    cd /tmp && rm -rf /tmp/libzip
