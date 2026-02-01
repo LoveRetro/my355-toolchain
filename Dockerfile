@@ -6,7 +6,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN dpkg --add-architecture arm64
 RUN apt-get -y update && apt-get -y install \
-    build-essential \
+    # build-essential \
     cmake \
     g++-aarch64-linux-gnu \
     gcc-aarch64-linux-gnu \
