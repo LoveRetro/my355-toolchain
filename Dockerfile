@@ -24,7 +24,6 @@ RUN apt-get update && apt-get install -y \
     gettext \
     vim \
 	golang \
-	squashfs-tools \
 #    python3-pip \
 #    bison \
 #    flex \
@@ -99,6 +98,7 @@ COPY support .
 RUN ./build-libzip.sh
 RUN ./build-libsamplerate.sh
 RUN ./build-lz4.sh
+RUN ./build-squashfs-tools.sh
 #RUN ./build-sdl.sh
 #RUN ./build-sqlite.sh
 
