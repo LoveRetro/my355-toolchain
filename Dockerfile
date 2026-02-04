@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM docker.io/library/ubuntu:24.04
 
 # RUN sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
 
@@ -35,11 +35,9 @@ RUN apt-get update && apt-get install -y \
 #    libclang-dev \
 #    libclang-cpp-dev \
 #    wayland-protocols \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 #RUN pip3 install --break-system-packages meson
-
-COPY support /root/support
 
 ENV TOOLCHAIN_DIR=/opt/aarch64-nextui-linux-gnu
 
@@ -56,22 +54,15 @@ RUN mkdir -p ${TOOLCHAIN_DIR} && \
         echo "Unsupported architecture: $ARCH" && exit 1; \
     fi && \
     TOOLCHAIN_URL=${TOOLCHAIN_REPO}/releases/download/${TOOLCHAIN_BUILD}/${TOOLCHAIN_ARCHIVE}; \
-    wget -q $TOOLCHAIN_URL -O /tmp/toolchain.tar.xz && \
-    tar -xf /tmp/toolchain.tar.xz -C ${TOOLCHAIN_DIR} --strip-components=2 && \
-    rm /tmp/toolchain.tar.xz
+    wget -qO - $TOOLCHAIN_URL | tar -xJ -C ${TOOLCHAIN_DIR} --strip-components=2
 
 ENV CROSS_TRIPLE=aarch64-nextui-linux-gnu
 ENV CROSS_ROOT=${TOOLCHAIN_DIR}
 ENV SYSROOT=${CROSS_ROOT}/${CROSS_TRIPLE}/libc
 
 # Download and extract the SDK sysroot
-ENV SDK_TAR=SDK_usr_tg5040_a133p.tgz
-ENV SDK_URL=https://github.com/trimui/toolchain_sdk_smartpro/releases/download/20231018/${SDK_TAR}
-
-RUN mkdir -p ${SYSROOT} && \
-wget -q ${SDK_URL} -O /tmp/${SDK_TAR} && \
-tar -xzf /tmp/${SDK_TAR} -C ${SYSROOT} && \
-rm /tmp/${SDK_TAR}
+ENV SDK_URL=https://github.com/trimui/toolchain_sdk_smartpro/releases/download/20231018/SDK_usr_tg5040_a133p.tgz
+RUN mkdir -p ${SYSROOT} && wget -qO - ${SDK_URL} | tar -xzC ${SYSROOT}
 
 ENV AS=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-as \
     AR=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-ar \
@@ -84,31 +75,29 @@ ENV AS=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-as \
 ENV PATH=${CROSS_ROOT}/bin:${PATH}
 ENV CROSS_COMPILE=${CROSS_TRIPLE}-
 ENV PREFIX=${SYSROOT}/usr
-ENV ARCH=arm64
+ENV ARCH=aarch64
 
 # CMake toolchain
-COPY toolchain-aarch64.cmake ${CROSS_ROOT}/Toolchain.cmake
 ENV CMAKE_TOOLCHAIN_FILE=${CROSS_ROOT}/Toolchain.cmake
+COPY toolchain-aarch64.cmake ${CROSS_ROOT}/Toolchain.cmake
 
 ENV PKG_CONFIG_SYSROOT_DIR=${SYSROOT}
 ENV PKG_CONFIG_PATH=${SYSROOT}/usr/lib/pkgconfig:${SYSROOT}/usr/share/pkgconfig
 
 # stuff and extra libs
-COPY support .
-RUN ./build-libzip.sh
-RUN ./build-libsamplerate.sh
-RUN ./build-lz4.sh
-RUN ./build-squashfs-tools.sh
-#RUN ./build-sdl.sh
-#RUN ./build-sqlite.sh
+COPY support /root/support
+RUN /root/support/build-libzip.sh
+RUN /root/support/build-libsamplerate.sh
+RUN /root/support/build-lz4.sh
+RUN /root/support/build-squashfs-tools.sh
+#RUN /root/support/build-sdl.sh
+#RUN /root/support/build-sqlite.sh
 
 ENV UNION_PLATFORM=my355
 ENV PREFIX_LOCAL=/opt/nextui
 
-RUN mkdir -p ${PREFIX_LOCAL}/include
-RUN mkdir -p ${PREFIX_LOCAL}/lib
+# just to make sure
+RUN mkdir -p ${PREFIX_LOCAL}/include ${PREFIX_LOCAL}/lib
 
 VOLUME /root/workspace
-WORKDIR /workspace
-
-CMD ["/bin/bash"]
+WORKDIR /root/workspace
