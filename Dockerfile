@@ -60,10 +60,6 @@ ENV CROSS_TRIPLE=aarch64-nextui-linux-gnu
 ENV CROSS_ROOT=${TOOLCHAIN_DIR}
 ENV SYSROOT=${CROSS_ROOT}/${CROSS_TRIPLE}/libc
 
-# Download and extract the SDK sysroot
-#ENV SDK_URL=https://github.com/trimui/toolchain_sdk_smartpro/releases/download/20231018/SDK_usr_tg5040_a133p.tgz
-#RUN mkdir -p ${SYSROOT} && wget -qO - ${SDK_URL} | tar -xzC ${SYSROOT}
-
 ENV AS=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-as \
     AR=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-ar \
     CC=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc \
