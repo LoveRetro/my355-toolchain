@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y \
     gettext \
     vim \
 	golang \
-#    python3-pip \
+    python3-pip \
 #    bison \
 #    flex \
 #    python3-mako \
@@ -37,7 +37,7 @@ RUN apt-get update && apt-get install -y \
 #    wayland-protocols \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-#RUN pip3 install --break-system-packages meson
+RUN pip3 install --break-system-packages meson
 
 ENV TOOLCHAIN_DIR=/opt/aarch64-nextui-linux-gnu
 
@@ -61,8 +61,8 @@ ENV CROSS_ROOT=${TOOLCHAIN_DIR}
 ENV SYSROOT=${CROSS_ROOT}/${CROSS_TRIPLE}/libc
 
 # Download and extract the SDK sysroot
-ENV SDK_URL=https://github.com/trimui/toolchain_sdk_smartpro/releases/download/20231018/SDK_usr_tg5040_a133p.tgz
-RUN mkdir -p ${SYSROOT} && wget -qO - ${SDK_URL} | tar -xzC ${SYSROOT}
+#ENV SDK_URL=https://github.com/trimui/toolchain_sdk_smartpro/releases/download/20231018/SDK_usr_tg5040_a133p.tgz
+#RUN mkdir -p ${SYSROOT} && wget -qO - ${SDK_URL} | tar -xzC ${SYSROOT}
 
 ENV AS=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-as \
     AR=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-ar \
@@ -90,8 +90,10 @@ RUN /root/support/build-libzip.sh
 RUN /root/support/build-libsamplerate.sh
 RUN /root/support/build-lz4.sh
 RUN /root/support/build-squashfs-tools.sh
-#RUN /root/support/build-sdl.sh
-#RUN /root/support/build-sqlite.sh
+RUN /root/support/build-tinyalsa.sh
+RUN /root/support/build-mali.sh
+RUN /root/support/build-sdl.sh
+RUN /root/support/build-sqlite.sh
 
 ENV UNION_PLATFORM=my355
 ENV PREFIX_LOCAL=/opt/nextui
