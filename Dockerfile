@@ -25,19 +25,16 @@ RUN apt-get update && apt-get install -y \
     vim \
 	golang \
     python3-pip \
-#    bison \
-#    flex \
-#    python3-mako \
-#    libclc-19-dev \
-#    llvm-dev \
-#    libllvmspirvlib-18-dev \
-#    spirv-tools \
-#    libclang-dev \
-#    libclang-cpp-dev \
-#    wayland-protocols \
+    gperf \
+    bison \
+    flex \
+    python3-mako \
+    xsltproc \
+    docbook-xsl \
+    docbook-xml \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install --break-system-packages meson
+RUN pip3 install --break-system-packages meson jinja2
 
 ENV TOOLCHAIN_DIR=/opt/aarch64-nextui-linux-gnu
 
@@ -88,6 +85,7 @@ RUN /root/support/build-lz4.sh
 RUN /root/support/build-squashfs-tools.sh
 RUN /root/support/build-tinyalsa.sh
 RUN /root/support/build-mali.sh
+RUN /root/support/build-dbus.sh
 RUN /root/support/build-sdl.sh
 RUN /root/support/build-sqlite.sh
 
