@@ -31,12 +31,11 @@ git clone --depth=1 https://github.com/facebook/zstd.git /tmp/zstd && \
     make -j$(nproc) && make install && \
     cd /tmp && rm -rf /tmp/zstd
 
-# bz2 (shared lib - use Makefile-libbz2_so  instead of Makefile)
+# bz2 - static for libzip
 wget -q https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz -O /tmp/bzip2.tar.gz && \
     cd /tmp && tar -xzf bzip2.tar.gz && cd bzip2-1.0.8 && \
     make -j$(nproc) && \
     make PREFIX=$SYSROOT/usr install && \
-    make -f Makefile-libbz2_so && cp -L libbz2.so* $SYSROOT/usr/lib/ && \
     cd /tmp && rm -rf /tmp/bzip2*
 
 # zlib
@@ -51,6 +50,14 @@ git clone https://github.com/nih-at/libzip.git /tmp/libzip && \
     mkdir /tmp/libzip/build && cd /tmp/libzip/build && \
     cmake .. \
         -DCMAKE_INSTALL_PREFIX=$SYSROOT/usr \
-        -DCMAKE_BUILD_TYPE=Release && \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_EXAMPLES=OFF \
+        -DBUILD_DOC=OFF && \
     make -j$(nproc) && make install && \
     cd /tmp && rm -rf /tmp/libzip
+
+# bz2 (shared lib - use Makefile-libbz2_so  instead of Makefile)
+wget -q https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz -O /tmp/bzip2.tar.gz && \
+    cd /tmp && tar -xzf bzip2.tar.gz && cd bzip2-1.0.8 && \
+    make CC=$CC -f Makefile-libbz2_so && cp -L libbz2.so* $SYSROOT/usr/lib/ &&\
+    cd /tmp && rm -rf /tmp/bzip2*
