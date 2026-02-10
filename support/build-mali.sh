@@ -9,6 +9,22 @@ git clone --depth=1 https://gitlab.freedesktop.org/mesa/drm.git /tmp/libdrm && \
     ninja -C build install && \
     cd /tmp && rm -rf /tmp/libdrm
 
+# Create a cross file for meson
+cat > /tmp/cross_file.txt <<EOF
+[binaries]
+c = '${CROSS_TRIPLE}-gcc'
+cpp = '${CROSS_TRIPLE}-g++'
+ar = '${CROSS_TRIPLE}-ar'
+strip = '${CROSS_TRIPLE}-strip'
+pkgconfig = 'pkg-config'
+
+[host_machine]
+system = 'linux'
+cpu_family = 'aarch64'
+cpu = 'aarch64'
+endian = 'little'
+EOF
+
 # libmali blobs from Rocknix: https://github.com/ROCKNIX/libmali.git
 # we need to grab drivers for rk3566 here, so bifrost-g52
 # build via meson
@@ -17,6 +33,7 @@ git clone --depth=1 https://gitlab.freedesktop.org/mesa/drm.git /tmp/libdrm && \
 git clone --depth=1 https://github.com/LoveRetro/libmali.git /tmp/libmali && \
     mkdir /tmp/libmali/build && cd /tmp/libmali/build && \
     meson setup .. \
+        --cross-file /tmp/cross_file.txt \
         --prefix=$SYSROOT/usr \
         --libdir=lib \
         --buildtype=release \
