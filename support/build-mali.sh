@@ -2,13 +2,6 @@
 
 set -euo pipefail
 
-# libdrm
-git clone --depth=1 https://gitlab.freedesktop.org/mesa/drm.git /tmp/libdrm && \
-    cd /tmp/libdrm && \
-    meson setup build --prefix=$SYSROOT/usr --libdir=lib -Dbuildtype=release && \
-    ninja -C build install && \
-    cd /tmp && rm -rf /tmp/libdrm
-
 # Create a cross file for meson
 cat > /tmp/cross_file.txt <<EOF
 [binaries]
@@ -24,6 +17,13 @@ cpu_family = 'aarch64'
 cpu = 'aarch64'
 endian = 'little'
 EOF
+
+# libdrm
+git clone --depth=1 https://gitlab.freedesktop.org/mesa/drm.git /tmp/libdrm && \
+    cd /tmp/libdrm && \
+    meson setup build --cross-file /tmp/cross_file.txt --prefix=$SYSROOT/usr --libdir=lib -Dbuildtype=release && \
+    ninja -C build install && \
+    cd /tmp && rm -rf /tmp/libdrm
 
 # libmali blobs from Rocknix: https://github.com/ROCKNIX/libmali.git
 # we need to grab drivers for rk3566 here, so bifrost-g52
