@@ -37,7 +37,7 @@ wget -q https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz -O /tmp/bzip2.tar.gz
     # replace the horrible default makefile with one that actually works in 2026
     wget -q https://sources.debian.org/data/main/b/bzip2/1.0.8-4/Makefile -O Makefile && \
     make -j$(nproc) && \
-    make PREFIX=$SYSROOT/usr install && \
+    make PREFIX=$SYSROOT/usr CC=$CC install && \
     cd /tmp && rm -rf /tmp/bzip2*
 
 # zlib
