@@ -31,9 +31,11 @@ git clone --depth=1 https://github.com/facebook/zstd.git /tmp/zstd && \
     make -j$(nproc) && make install && \
     cd /tmp && rm -rf /tmp/zstd
 
-# bz2 - static for libzip
+# bz2
 wget -q https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz -O /tmp/bzip2.tar.gz && \
     cd /tmp && tar -xzf bzip2.tar.gz && cd bzip2-1.0.8 && \
+    # replace the horrible default makefile with one that actually works in 2026
+    wget -q https://sources.debian.org/data/main/b/bzip2/1.0.8-4/Makefile -O Makefile && \
     make -j$(nproc) && \
     make PREFIX=$SYSROOT/usr install && \
     cd /tmp && rm -rf /tmp/bzip2*
@@ -55,9 +57,3 @@ git clone https://github.com/nih-at/libzip.git /tmp/libzip && \
         -DBUILD_DOC=OFF && \
     make -j$(nproc) && make install && \
     cd /tmp && rm -rf /tmp/libzip
-
-# bz2 (shared lib - use Makefile-libbz2_so  instead of Makefile)
-wget -q https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz -O /tmp/bzip2.tar.gz && \
-    cd /tmp && tar -xzf bzip2.tar.gz && cd bzip2-1.0.8 && \
-    make CC=$CC -f Makefile-libbz2_so && cp -L libbz2.so* $SYSROOT/usr/lib/ &&\
-    cd /tmp && rm -rf /tmp/bzip2*
