@@ -2,13 +2,8 @@
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
-# --- Base stage for tools ---
-# We define this so we can reuse the apt-get block, but we must be careful.
-# Instead of a shared 'base' stage which can get locked to TARGETPLATFORM,
-# we'll use a more direct approach for clarity and reliability.
-
-# --- Stage 1: Native Build Base ---
-FROM --platform=$BUILDPLATFORM docker.io/library/ubuntu:24.04 AS build-base
+# --- Base stage: Common tools and environment ---
+FROM docker.io/library/ubuntu:24.04 AS common-base
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     make cmake ninja-build autotools-dev autoconf automake autopoint libtool \
@@ -17,19 +12,8 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN pip3 install --break-system-packages meson jinja2
 
-# --- Stage 2: Runtime Base ---
-FROM docker.io/library/ubuntu:24.04 AS runtime-base
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y \
-    make cmake ninja-build autotools-dev autoconf automake autopoint libtool \
-    po4a m4 pkg-config unzip wget git python3 ca-certificates gettext vim golang \
-    python3-pip gperf bison flex python3-mako xsltproc docbook-xsl docbook-xml \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-RUN pip3 install --break-system-packages meson jinja2
-
-# Shared Env
-ENV TOOLCHAIN_DIR=/opt/aarch64-nextui-linux-gnu
-ENV CROSS_TRIPLE=aarch64-nextui-linux-gnu
+ENV TOOLCHAIN_DIR=/opt/aarch64-nextui-linux-gnu \
+    CROSS_TRIPLE=aarch64-nextui-linux-gnu
 ENV CROSS_ROOT=${TOOLCHAIN_DIR}
 ENV SYSROOT=${CROSS_ROOT}/${CROSS_TRIPLE}/libc
 ENV AS=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-as \
@@ -39,12 +23,18 @@ ENV AS=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-as \
     CXX=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-g++ \
     LD=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-ld
 ENV PATH=${CROSS_ROOT}/bin:${PATH}
-ENV CROSS_COMPILE=${CROSS_TRIPLE}-
-ENV PREFIX=${SYSROOT}/usr
-ENV ARCH=aarch64
-ENV CMAKE_TOOLCHAIN_FILE=${CROSS_ROOT}/Toolchain.cmake
-ENV PKG_CONFIG_SYSROOT_DIR=${SYSROOT}
-ENV PKG_CONFIG_PATH=${SYSROOT}/usr/lib/pkgconfig:${SYSROOT}/usr/share/pkgconfig
+ENV CROSS_COMPILE=${CROSS_TRIPLE}- \
+    PREFIX=${SYSROOT}/usr \
+    ARCH=aarch64 \
+    CMAKE_TOOLCHAIN_FILE=${CROSS_ROOT}/Toolchain.cmake \
+    PKG_CONFIG_SYSROOT_DIR=${SYSROOT} \
+    PKG_CONFIG_PATH=${SYSROOT}/usr/lib/pkgconfig:${SYSROOT}/usr/share/pkgconfig
+
+# --- Stage 1: Native Build Base ---
+FROM --platform=$BUILDPLATFORM common-base AS build-base
+
+# --- Stage 2: Runtime Base ---
+FROM common-base AS runtime-base
 
 # --- Stage 3: Builder (Native Execution) ---
 FROM --platform=$BUILDPLATFORM build-base AS builder
