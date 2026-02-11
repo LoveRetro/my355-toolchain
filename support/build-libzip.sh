@@ -5,8 +5,9 @@ set -euo pipefail
 # libcrypto
 git clone --depth=1 --branch openssl-3.4.1 https://github.com/openssl/openssl.git /tmp/openssl && \
     cd /tmp/openssl && \
-    ./Configure linux-aarch64 --prefix=$SYSROOT/usr --openssldir=$SYSROOT/usr shared && \
-    make -j$(nproc) && make install_sw install_ssldirs install_dev && \
+    CROSS_COMPILE= ./Configure linux-aarch64 --prefix=$SYSROOT/usr --openssldir=$SYSROOT/usr shared && \
+    CROSS_COMPILE= make -j$(nproc) && \
+    CROSS_COMPILE= make install_sw install_ssldirs install_dev && \
     cd /tmp && rm -rf /tmp/openssl
 
 # lzma/xz
