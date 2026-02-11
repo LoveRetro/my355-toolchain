@@ -3,9 +3,9 @@
 set -euo pipefail
 
 # libcrypto
-git clone --depth=1 --branch openssl-3.6.1 https://github.com/openssl/openssl.git /tmp/openssl && \
+git clone --depth=1 --branch openssl-3.4.1 https://github.com/openssl/openssl.git /tmp/openssl && \
     cd /tmp/openssl && \
-    CROSS_COMPILE= ./config --prefix=$SYSROOT/usr --openssldir=$SYSROOT/usr shared && \
+    ./Configure linux-aarch64 --prefix=$SYSROOT/usr --openssldir=$SYSROOT/usr shared && \
     make -j$(nproc) && make install_sw install_ssldirs install_dev && \
     cd /tmp && rm -rf /tmp/openssl
 
@@ -26,6 +26,7 @@ git clone https://github.com/tukaani-project/xz.git /tmp/xz && \
 git clone --depth=1 https://github.com/facebook/zstd.git /tmp/zstd && \
     cd /tmp/zstd/build/cmake && \
     cmake . \
+        -DCMAKE_TOOLCHAIN_FILE=$CMAKE_TOOLCHAIN_FILE \
         -DCMAKE_INSTALL_PREFIX=$SYSROOT/usr \
         -DCMAKE_BUILD_TYPE=Release && \
     make -j$(nproc) && make install && \
@@ -34,16 +35,15 @@ git clone --depth=1 https://github.com/facebook/zstd.git /tmp/zstd && \
 # bz2
 wget -q https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz -O /tmp/bzip2.tar.gz && \
     cd /tmp && tar -xzf bzip2.tar.gz && cd bzip2-1.0.8 && \
-    # replace the horrible default makefile with one that actually works in 2026
     wget -q https://sources.debian.org/data/main/b/bzip2/1.0.8-4/Makefile -O Makefile && \
-    make -j$(nproc) && \
-    make PREFIX=$SYSROOT/usr CC=$CC install && \
+    make CC="$CC" AR="$AR" -j$(nproc) && \
+    make PREFIX=$SYSROOT/usr CC="$CC" AR="$AR" install && \
     cd /tmp && rm -rf /tmp/bzip2*
 
 # zlib
 wget -q https://zlib.net/zlib-1.3.1.tar.gz -O /tmp/zlib.tar.gz && \
     cd /tmp && tar -xzf zlib.tar.gz && cd zlib-1.3.1 && \
-    ./configure --prefix=$SYSROOT/usr --shared && \
+    CC="$CC" AR="$AR" ./configure --prefix=$SYSROOT/usr --shared && \
     make -j$(nproc) && make install && \
     cd /tmp && rm -rf /tmp/zlib*
 
@@ -51,6 +51,7 @@ wget -q https://zlib.net/zlib-1.3.1.tar.gz -O /tmp/zlib.tar.gz && \
 git clone https://github.com/nih-at/libzip.git /tmp/libzip && \
     mkdir /tmp/libzip/build && cd /tmp/libzip/build && \
     cmake .. \
+        -DCMAKE_TOOLCHAIN_FILE=$CMAKE_TOOLCHAIN_FILE \
         -DCMAKE_INSTALL_PREFIX=$SYSROOT/usr \
         -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_EXAMPLES=OFF \

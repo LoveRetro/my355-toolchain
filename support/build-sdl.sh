@@ -6,6 +6,7 @@ set -euo pipefail
 git clone --depth=1 --branch SDL2 https://github.com/libsdl-org/SDL.git /tmp/SDL && \
     mkdir /tmp/SDL/build && cd /tmp/SDL/build && \
     cmake .. \
+        -DCMAKE_TOOLCHAIN_FILE=$CMAKE_TOOLCHAIN_FILE \
         -DCMAKE_INSTALL_PREFIX=$SYSROOT/usr \
         -DCMAKE_BUILD_TYPE=Release \
         -DSDL_STATIC=OFF \
@@ -17,6 +18,7 @@ git clone --depth=1 --branch SDL2 https://github.com/libsdl-org/SDL.git /tmp/SDL
 git clone --depth=1 --branch SDL2 https://github.com/libsdl-org/SDL_image.git /tmp/SDL_image && \
     mkdir /tmp/SDL_image/build && cd /tmp/SDL_image/build && \
     cmake .. \
+        -DCMAKE_TOOLCHAIN_FILE=$CMAKE_TOOLCHAIN_FILE \
         -DCMAKE_INSTALL_PREFIX=$SYSROOT/usr \
         -DCMAKE_BUILD_TYPE=Release \
         -DSDL2IMAGE_STATIC=OFF \
@@ -28,6 +30,7 @@ git clone --depth=1 --branch SDL2 https://github.com/libsdl-org/SDL_image.git /t
 git clone --depth=1 https://github.com/freetype/freetype.git /tmp/freetype && \
     mkdir /tmp/freetype/build && cd /tmp/freetype/build && \
     cmake .. \
+        -DCMAKE_TOOLCHAIN_FILE=$CMAKE_TOOLCHAIN_FILE \
         -DCMAKE_INSTALL_PREFIX=$SYSROOT/usr \
         -DCMAKE_BUILD_TYPE=Release \
         -DFT_WITH_ZLIB=ON \
@@ -39,6 +42,7 @@ git clone --depth=1 https://github.com/freetype/freetype.git /tmp/freetype && \
 git clone --depth=1 --branch SDL2 https://github.com/libsdl-org/SDL_ttf.git /tmp/SDL_ttf && \
     mkdir /tmp/SDL_ttf/build && cd /tmp/SDL_ttf/build && \
     cmake .. \
+        -DCMAKE_TOOLCHAIN_FILE=$CMAKE_TOOLCHAIN_FILE \
         -DCMAKE_INSTALL_PREFIX=$SYSROOT/usr \
         -DCMAKE_BUILD_TYPE=Release \
         -DSDL2TTF_STATIC=OFF \
