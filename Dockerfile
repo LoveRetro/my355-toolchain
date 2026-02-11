@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
 RUN pip3 install --break-system-packages meson jinja2
 
 # --- Stage 2: Runtime Base (Target architecture) ---
-FROM --platform=$TARGETPLATFORM docker.io/library/ubuntu:24.04 AS runtime-base
+FROM docker.io/library/ubuntu:24.04 AS runtime-base
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     make cmake ninja-build autotools-dev autoconf automake autopoint libtool \
@@ -74,7 +74,7 @@ RUN /root/support/build-libzip.sh && \
     /root/support/build-sqlite.sh
 
 # --- Stage 4: Final Image (Runs on target platform) ---
-FROM --platform=$TARGETPLATFORM runtime-base AS final
+FROM runtime-base AS final
 ARG TARGETARCH
 
 # Toolchain environment for the final container
