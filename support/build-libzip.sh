@@ -2,14 +2,24 @@
 
 set -euo pipefail
 
+# libcrypto
+git clone --depth=1 --branch openssl-3.4.1 https://github.com/openssl/openssl.git /tmp/openssl && \
+    cd /tmp/openssl && \
+    CROSS_COMPILE= ./Configure linux-aarch64 --prefix=$SYSROOT/usr --openssldir=$SYSROOT/usr shared && \
+    CROSS_COMPILE= make -j$(nproc) && \
+    CROSS_COMPILE= make install_sw install_ssldirs install_dev && \
+    cd /tmp && rm -rf /tmp/openssl
+
 # lzma/xz
 git clone https://github.com/tukaani-project/xz.git /tmp/xz && \
     cd /tmp/xz && \
     ./autogen.sh && \
     ./configure \
        --host=$CROSS_TRIPLE \
+        --prefix=$SYSROOT/usr \
         --disable-static \
         --enable-shared \
+        --with-sysroot=$SYSROOT && \
     make -j$(nproc) && make install && \
     cd /tmp && rm -rf /tmp/xz
 
@@ -17,6 +27,8 @@ git clone https://github.com/tukaani-project/xz.git /tmp/xz && \
 git clone --depth=1 https://github.com/facebook/zstd.git /tmp/zstd && \
     cd /tmp/zstd/build/cmake && \
     cmake . \
+        -DCMAKE_TOOLCHAIN_FILE=$CMAKE_TOOLCHAIN_FILE \
+        -DCMAKE_INSTALL_PREFIX=$SYSROOT/usr \
         -DCMAKE_BUILD_TYPE=Release && \
     make -j$(nproc) && make install && \
     cd /tmp && rm -rf /tmp/zstd
@@ -24,16 +36,15 @@ git clone --depth=1 https://github.com/facebook/zstd.git /tmp/zstd && \
 # bz2
 wget -q https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz -O /tmp/bzip2.tar.gz && \
     cd /tmp && tar -xzf bzip2.tar.gz && cd bzip2-1.0.8 && \
-    make -j$(nproc) && \
-    make install && \
-# for some reason, libbz2 is not world-readable after install
-    chmod a+r /usr/lib/libbz2.so.1.0 && \
+    wget -q https://sources.debian.org/data/main/b/bzip2/1.0.8-4/Makefile -O Makefile && \
+    make CC="$CC" AR="$AR" -j$(nproc) && \
+    make PREFIX=$SYSROOT/usr CC="$CC" AR="$AR" install && \
     cd /tmp && rm -rf /tmp/bzip2*
 
 # zlib
 wget -q https://zlib.net/zlib-1.3.1.tar.gz -O /tmp/zlib.tar.gz && \
     cd /tmp && tar -xzf zlib.tar.gz && cd zlib-1.3.1 && \
-    ./configure --shared && \
+    CC="$CC" AR="$AR" ./configure --prefix=$SYSROOT/usr --shared && \
     make -j$(nproc) && make install && \
     cd /tmp && rm -rf /tmp/zlib*
 
@@ -41,6 +52,10 @@ wget -q https://zlib.net/zlib-1.3.1.tar.gz -O /tmp/zlib.tar.gz && \
 git clone https://github.com/nih-at/libzip.git /tmp/libzip && \
     mkdir /tmp/libzip/build && cd /tmp/libzip/build && \
     cmake .. \
-        -DCMAKE_BUILD_TYPE=Release && \
+        -DCMAKE_TOOLCHAIN_FILE=$CMAKE_TOOLCHAIN_FILE \
+        -DCMAKE_INSTALL_PREFIX=$SYSROOT/usr \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_EXAMPLES=OFF \
+        -DBUILD_DOC=OFF && \
     make -j$(nproc) && make install && \
     cd /tmp && rm -rf /tmp/libzip
