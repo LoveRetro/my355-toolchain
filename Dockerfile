@@ -2,7 +2,7 @@
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
-# --- Stage 1: Build Base (Always Native) ---
+# --- Stage 1: Native Build Base (Always host architecture) ---
 FROM --platform=$BUILDPLATFORM docker.io/library/ubuntu:24.04 AS build-base
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN pip3 install --break-system-packages meson jinja2
 
-# --- Stage 2: Runtime Base (Target Platform) ---
+# --- Stage 2: Runtime Base (Target architecture) ---
 FROM --platform=$TARGETPLATFORM docker.io/library/ubuntu:24.04 AS runtime-base
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
@@ -22,7 +22,11 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN pip3 install --break-system-packages meson jinja2
 
-# Common Environment (Shared through copy-paste to avoid stage locking)
+# --- Stage 3: Builder (Runs natively on build host) ---
+FROM --platform=$BUILDPLATFORM build-base AS builder
+ARG BUILDARCH
+
+# Toolchain environment for cross-compilation
 ENV TOOLCHAIN_DIR=/opt/aarch64-nextui-linux-gnu \
     CROSS_TRIPLE=aarch64-nextui-linux-gnu
 ENV CROSS_ROOT=${TOOLCHAIN_DIR}
@@ -40,10 +44,6 @@ ENV CROSS_COMPILE=${CROSS_TRIPLE}- \
     CMAKE_TOOLCHAIN_FILE=${CROSS_ROOT}/Toolchain.cmake \
     PKG_CONFIG_SYSROOT_DIR=${SYSROOT} \
     PKG_CONFIG_PATH=${SYSROOT}/usr/lib/pkgconfig:${SYSROOT}/usr/share/pkgconfig
-
-# --- Stage 3: Builder (Native Execution) ---
-FROM --platform=$BUILDPLATFORM build-base AS builder
-ARG BUILDARCH
 
 # Download the toolchain for the BUILDER host architecture
 RUN mkdir -p ${TOOLCHAIN_DIR} && \
@@ -73,11 +73,11 @@ RUN /root/support/build-libzip.sh && \
     /root/support/build-sdl.sh && \
     /root/support/build-sqlite.sh
 
-# --- Stage 4: Final Image ---
+# --- Stage 4: Final Image (Runs on target platform) ---
 FROM --platform=$TARGETPLATFORM runtime-base AS final
 ARG TARGETARCH
 
-# Shared Env AGAIN (Final stage needs these at runtime)
+# Toolchain environment for the final container
 ENV TOOLCHAIN_DIR=/opt/aarch64-nextui-linux-gnu \
     CROSS_TRIPLE=aarch64-nextui-linux-gnu
 ENV CROSS_ROOT=${TOOLCHAIN_DIR}
