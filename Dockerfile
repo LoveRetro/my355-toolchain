@@ -2,8 +2,8 @@
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
-# --- Base stage: Common tools and environment ---
-FROM docker.io/library/ubuntu:24.04 AS common-base
+# --- Stage 1: Build Base (Always Native) ---
+FROM --platform=$BUILDPLATFORM docker.io/library/ubuntu:24.04 AS build-base
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     make cmake ninja-build autotools-dev autoconf automake autopoint libtool \
@@ -12,6 +12,17 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN pip3 install --break-system-packages meson jinja2
 
+# --- Stage 2: Runtime Base (Target Platform) ---
+FROM --platform=$TARGETPLATFORM docker.io/library/ubuntu:24.04 AS runtime-base
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y \
+    make cmake ninja-build autotools-dev autoconf automake autopoint libtool \
+    po4a m4 pkg-config unzip wget git python3 ca-certificates gettext vim golang \
+    python3-pip gperf bison flex python3-mako xsltproc docbook-xsl docbook-xml \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN pip3 install --break-system-packages meson jinja2
+
+# Common Environment (Shared through copy-paste to avoid stage locking)
 ENV TOOLCHAIN_DIR=/opt/aarch64-nextui-linux-gnu \
     CROSS_TRIPLE=aarch64-nextui-linux-gnu
 ENV CROSS_ROOT=${TOOLCHAIN_DIR}
@@ -29,12 +40,6 @@ ENV CROSS_COMPILE=${CROSS_TRIPLE}- \
     CMAKE_TOOLCHAIN_FILE=${CROSS_ROOT}/Toolchain.cmake \
     PKG_CONFIG_SYSROOT_DIR=${SYSROOT} \
     PKG_CONFIG_PATH=${SYSROOT}/usr/lib/pkgconfig:${SYSROOT}/usr/share/pkgconfig
-
-# --- Stage 1: Native Build Base ---
-FROM --platform=$BUILDPLATFORM common-base AS build-base
-
-# --- Stage 2: Runtime Base ---
-FROM common-base AS runtime-base
 
 # --- Stage 3: Builder (Native Execution) ---
 FROM --platform=$BUILDPLATFORM build-base AS builder
@@ -69,10 +74,29 @@ RUN /root/support/build-libzip.sh && \
     /root/support/build-sqlite.sh
 
 # --- Stage 4: Final Image ---
-FROM runtime-base AS final
+FROM --platform=$TARGETPLATFORM runtime-base AS final
 ARG TARGETARCH
 
-# Download the toolchain for the TARGET architecture (so it can run inside the container)
+# Shared Env AGAIN (Final stage needs these at runtime)
+ENV TOOLCHAIN_DIR=/opt/aarch64-nextui-linux-gnu \
+    CROSS_TRIPLE=aarch64-nextui-linux-gnu
+ENV CROSS_ROOT=${TOOLCHAIN_DIR}
+ENV SYSROOT=${CROSS_ROOT}/${CROSS_TRIPLE}/libc
+ENV AS=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-as \
+    AR=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-ar \
+    CC=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-gcc \
+    CPP=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-cpp \
+    CXX=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-g++ \
+    LD=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-ld
+ENV PATH=${CROSS_ROOT}/bin:${PATH}
+ENV CROSS_COMPILE=${CROSS_TRIPLE}- \
+    PREFIX=${SYSROOT}/usr \
+    ARCH=aarch64 \
+    CMAKE_TOOLCHAIN_FILE=${CROSS_ROOT}/Toolchain.cmake \
+    PKG_CONFIG_SYSROOT_DIR=${SYSROOT} \
+    PKG_CONFIG_PATH=${SYSROOT}/usr/lib/pkgconfig:${SYSROOT}/usr/share/pkgconfig
+
+# Download the toolchain for the TARGET architecture
 RUN mkdir -p ${TOOLCHAIN_DIR} && \
     TOOLCHAIN_REPO=https://github.com/LoveRetro/gcc-arm-8.3-aarch64-my355 && \
     TOOLCHAIN_BUILD=v8.3.0-20260126-120301-66f7801c && \
