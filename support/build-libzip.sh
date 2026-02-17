@@ -36,7 +36,7 @@ git clone --depth=1 https://github.com/facebook/zstd.git /tmp/zstd && \
 # bz2
 wget -q https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz -O /tmp/bzip2.tar.gz && \
     cd /tmp && tar -xzf bzip2.tar.gz && cd bzip2-1.0.8 && \
-    wget -q https://sources.debian.org/data/main/b/bzip2/1.0.8-6/Makefile -O Makefile && \
+    cp /root/support/bzip2/Makefile . && \
     make CC="$CC" AR="$AR" -j$(nproc) && \
     make PREFIX=$SYSROOT/usr CC="$CC" AR="$AR" install && \
     cd /tmp && rm -rf /tmp/bzip2*
