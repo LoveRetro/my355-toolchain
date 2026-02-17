@@ -38,11 +38,6 @@ bzip2recover: bzip2recover.o
 libbz2.a: $(OBJS)
 	rm -f libbz2.a
 	$(AR) cq libbz2.a $(OBJS)
-	@if ( test -f $(RANLIB) || test -f /usr/bin/ranlib || \
-		test -f /bin/ranlib || test -f /usr/ccs/bin/ranlib ) ; then \
-		echo $(RANLIB) libbz2.a ; \
-		$(RANLIB) libbz2.a ; \
-	fi
 
 libbz2.so: libbz2.so.$(somajor)
 	ln -sf $^ $@
