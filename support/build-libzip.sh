@@ -38,7 +38,7 @@ wget -q https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz -O /tmp/bzip2.tar.gz
     cd /tmp && tar -xzf bzip2.tar.gz && cd bzip2-1.0.8 && \
     cp /root/support/bzip2/Makefile . && \
     make CC="$CC" AR="$AR" -j$(nproc) && \
-    make PREFIX=$SYSROOT/usr CC="$CC" AR="$AR" install && \
+    make PREFIX=$SYSROOT/usr CC="$CC" AR="$AR" PREFIX="$PREFIX" install && \
     cd /tmp && rm -rf /tmp/bzip2*
 
 # zlib

@@ -13,21 +13,11 @@
 # ------------------------------------------------------------------
 
 somajor=1.0
-sominor=$(somajor).4
+sominor=$(somajor).6
 SHELL=/bin/sh
-
-# To assist in cross-compiling
-CC=gcc
-AR=ar
-RANLIB=ranlib
-LDFLAGS=
 
 BIGFILES=-D_FILE_OFFSET_BITS=64
 CFLAGS=-Wall -Winline -O2 -g $(BIGFILES)
-
-# Where you want it installed when you do 'make install'
-PREFIX=/usr/local
-
 
 OBJS= blocksort.o  \
       huffman.o    \
