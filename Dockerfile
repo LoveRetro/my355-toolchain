@@ -71,7 +71,8 @@ RUN /root/support/build-libzip.sh && \
     /root/support/build-mali.sh && \
     /root/support/build-dbus.sh && \
     /root/support/build-sdl.sh && \
-    /root/support/build-sqlite.sh
+    /root/support/build-sqlite.sh && \
+    /root/support/check-container.sh
 
 # --- Stage 4: Final Image (Runs on target platform) ---
 FROM runtime-base AS final

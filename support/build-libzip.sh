@@ -36,13 +36,12 @@ git clone --depth=1 https://github.com/facebook/zstd.git /tmp/zstd && \
 # bz2
 wget -q https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz -O /tmp/bzip2.tar.gz && \
     cd /tmp && tar -xzf bzip2.tar.gz && cd bzip2-1.0.8 && \
-    wget -q https://sources.debian.org/data/main/b/bzip2/1.0.8-6/Makefile -O Makefile && \
-    make CC="$CC" AR="$AR" -j$(nproc) && \
-    make PREFIX=$SYSROOT/usr CC="$CC" AR="$AR" install && \
+    cp /root/support/bzip2/Makefile . && \
+    make -j$(nproc) all && make install && \
     cd /tmp && rm -rf /tmp/bzip2*
 
 # zlib
-wget -q https://zlib.net/zlib-1.3.1.tar.gz -O /tmp/zlib.tar.gz && \
+wget -q https://zlib.net/fossils/zlib-1.3.1.tar.gz -O /tmp/zlib.tar.gz && \
     cd /tmp && tar -xzf zlib.tar.gz && cd zlib-1.3.1 && \
     CC="$CC" AR="$AR" ./configure --prefix=$SYSROOT/usr --shared && \
     make -j$(nproc) && make install && \
