@@ -27,7 +27,7 @@ OBJS= blocksort.o  \
       decompress.o \
       bzlib.o
 
-all: libbz2.a bzip2 bzip2recover test
+all: libbz2.a bzip2 bzip2recover
 
 bzip2: libbz2.so bzip2.o
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o bzip2 bzip2.o -L. -lbz2
